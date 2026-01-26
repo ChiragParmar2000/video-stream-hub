@@ -27,55 +27,74 @@ function extractTitleFromUrl(url: string): string {
 function parseVideosFromHtml(html: string): VideoItem[] {
   const videos: VideoItem[] = [];
   
-  // Match article elements with video data
-  const articleRegex = /<article[^>]*data-video-id="([^"]*)"[^>]*data-main-thumb="([^"]*)"[^>]*>[\s\S]*?<a\s+href="([^"]*)"[^>]*>[\s\S]*?<span class="duration">[^<]*<\/i>([^<]*)<\/span>[\s\S]*?<\/article>/gi;
+  // Split by article tags to get individual video entries
+  const articleSplits = html.split(/<article/gi);
   
-  let match;
-  while ((match = articleRegex.exec(html)) !== null) {
-    const [, videoId, thumbnail, href, duration] = match;
+  for (let i = 1; i < articleSplits.length; i++) {
+    const article = '<article' + articleSplits[i].split(/<\/article>/i)[0] + '</article>';
+    
+    // Check if this is a video article (has loop-video class)
+    if (!article.includes('loop-video')) {
+      continue;
+    }
+    
+    // Extract video ID
+    const videoIdMatch = article.match(/data-video-id="([^"]*)"/);
+    if (!videoIdMatch) continue;
+    const videoId = videoIdMatch[1];
+    
+    // Extract thumbnail
+    const thumbMatch = article.match(/data-main-thumb="([^"]*)"/);
+    if (!thumbMatch) continue;
+    const thumbnail = thumbMatch[1];
+    
+    // Extract href - look for the main video link (after the thumbnail div)
+    // The video link format is like: https://fapnut.net/video-title-here/
+    const hrefMatch = article.match(/<a\s+href="(https:\/\/fapnut\.net\/[a-z0-9\-]+-[a-z0-9\-]+\/)"/i);
+    if (!hrefMatch) continue;
+    const href = hrefMatch[1];
+    
+    // Skip category/tag/filter links
+    if (href.includes('/category/') || href.includes('/tag/') || href.includes('/page/') || 
+        href.includes('/actors/') || href.includes('/categories/') || href.includes('/tags/') ||
+        href.includes('?filter=')) {
+      continue;
+    }
+    
+    // Extract duration
+    const durationMatch = article.match(/<span class="duration">[^<]*<i[^>]*><\/i>([^<]*)<\/span>/i) ||
+                         article.match(/<span class="duration">.*?<\/i>\s*([^<]*)<\/span>/is);
+    const duration = durationMatch ? durationMatch[1].trim() : '';
     
     // Check if HD
-    const isHD = match[0].includes('class="hd-video"');
+    const isHD = article.includes('hd-video');
     
-    // Extract title from thumbnail URL
-    const title = extractTitleFromUrl(thumbnail);
+    // Extract title from entry-header
+    const titleMatch = article.match(/<header class="entry-header">\s*<span>([^<]*)<\/span>/i);
+    let title = '';
+    if (titleMatch) {
+      title = titleMatch[1]
+        .replace(/&#8211;/g, '-')
+        .replace(/&#8217;/g, "'")
+        .replace(/&#\d+;/g, '')
+        .trim();
+    }
+    
+    if (!title) {
+      title = extractTitleFromUrl(thumbnail);
+    }
     
     videos.push({
       id: videoId,
       thumbnail: thumbnail,
       title: title,
-      duration: duration?.trim() || '',
+      duration: duration,
       href: href,
       isHD: isHD,
     });
   }
   
-  // Fallback regex for simpler parsing
-  if (videos.length === 0) {
-    const simpleRegex = /<article[^>]*data-video-id="([^"]*)"[^>]*data-main-thumb="([^"]*)"[^>]*>/gi;
-    const hrefRegex = /<a\s+href="(https:\/\/fapnut\.net\/[^"]+)"/gi;
-    const durationRegex = /<span class="duration">[^<]*<\/i>([^<]*)<\/span>/gi;
-    
-    const thumbMatches = [...html.matchAll(simpleRegex)];
-    const hrefMatches = [...html.matchAll(hrefRegex)];
-    const durationMatches = [...html.matchAll(durationRegex)];
-    
-    for (let i = 0; i < thumbMatches.length; i++) {
-      const [, videoId, thumbnail] = thumbMatches[i];
-      const href = hrefMatches[i]?.[1] || '';
-      const duration = durationMatches[i]?.[1]?.trim() || '';
-      
-      videos.push({
-        id: videoId,
-        thumbnail: thumbnail,
-        title: extractTitleFromUrl(thumbnail),
-        duration: duration,
-        href: href,
-        isHD: true,
-      });
-    }
-  }
-  
+  console.log(`Parsed ${videos.length} valid videos`);
   return videos;
 }
 
@@ -126,7 +145,7 @@ Deno.serve(async (req) => {
     const html = await response.text();
     const videos = parseVideosFromHtml(html);
     
-    console.log(`Found ${videos.length} videos`);
+    console.log(`Returning ${videos.length} videos for page ${page}`);
     
     return new Response(
       JSON.stringify({ success: true, videos, page }),
