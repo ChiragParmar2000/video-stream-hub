@@ -8,10 +8,10 @@ interface PaginationProps {
   totalPages?: number;
 }
 
-export function Pagination({ currentPage, onPageChange, totalPages = 100 }: PaginationProps) {
+export function Pagination({ currentPage, onPageChange, totalPages = 400 }: PaginationProps) {
   const pageNumbers = useMemo(() => {
     const pages: number[] = [];
-    const range = 5; // Show 5 pages at a time
+    const range = 10; // Show 10 pages at a time
     
     // Calculate start page
     let start = Math.floor((currentPage - 1) / range) * range + 1;
