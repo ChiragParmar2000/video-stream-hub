@@ -2,17 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { VideoCard } from '@/components/VideoCard';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { Pagination } from '@/components/Pagination';
-import { SourceTabs } from '@/components/SourceTabs';
 import { VideoGridSkeleton } from '@/components/VideoGridSkeleton';
 import { fetchVideos, fetchVideoStream, type VideoItem, type VideoStream } from '@/lib/api';
-import { VIDEO_SOURCES } from '@/config/sources';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 type ViewState = 'list' | 'player';
 
 const Index = () => {
-  const [activeSource, setActiveSource] = useState(VIDEO_SOURCES[0].id);
   const [currentPage, setCurrentPage] = useState(1);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +22,7 @@ const Index = () => {
   const loadVideos = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await fetchVideos(currentPage, activeSource);
+      const result = await fetchVideos(currentPage, 'default');
       setVideos(result.videos);
     } catch (error) {
       console.error('Failed to load videos:', error);
@@ -37,16 +34,11 @@ const Index = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, activeSource, toast]);
+  }, [currentPage, toast]);
 
   useEffect(() => {
     loadVideos();
   }, [loadVideos]);
-
-  const handleSourceChange = (sourceId: string) => {
-    setActiveSource(sourceId);
-    setCurrentPage(1);
-  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -108,11 +100,7 @@ const Index = () => {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="px-4 py-3">
-          <h1 className="text-xl font-bold text-gradient mb-3">Videos</h1>
-          <SourceTabs
-            activeSource={activeSource}
-            onSourceChange={handleSourceChange}
-          />
+          <h1 className="text-xl font-bold text-gradient">Videos</h1>
         </div>
       </header>
 
