@@ -22,7 +22,8 @@ const Index = () => {
   const loadVideos = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await fetchVideos(currentPage, 'default');
+      const result = await fetchVideos(currentPage, 'video1');
+
       setVideos(result.videos);
     } catch (error) {
       console.error('Failed to load videos:', error);
