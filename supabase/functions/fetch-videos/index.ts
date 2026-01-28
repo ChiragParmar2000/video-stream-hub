@@ -71,18 +71,18 @@ function parseVideosFromHtml(html: string): VideoItem[] {
     const isHD = article.includes('hd-video');
     
     // Extract title from entry-header
-    const titleMatch = article.match(/<header class="entry-header">\s*<span>([^<]*)<\/span>/i);
-    let title = '';
-    if (titleMatch) {
-      title = titleMatch[1]
-        .replace(/&#8211;/g, '-')
-        .replace(/&#8217;/g, "'")
-        .replace(/&#\d+;/g, '')
-        .trim();
+    function extractTitleFromVideoPageUrl(url: string): string {
+  try {
+    const slug = url.replace(/\/$/, '').split('/').pop() || '';
+    return slug.replace(/-/g, ' ').trim();
+  } catch {
+    return 'Untitled Video';
+  }
     }
     
     if (!title) {
-      title = extractTitleFromUrl(thumbnail);
+      title = extractTitleFromVideoPageUrl(href);
+
     }
     
     videos.push({
