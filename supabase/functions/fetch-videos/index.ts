@@ -34,7 +34,7 @@ function parseVideosFromHtml(html: string): VideoItem[] {
     const article = '<article' + articleSplits[i].split(/<\/article>/i)[0] + '</article>';
     
     // Check if this is a video article (has loop-video class)
-    if (!article.includes('loop-video')) {
+    if (!article.includes('data-video-id')) {
       continue;
     }
     
