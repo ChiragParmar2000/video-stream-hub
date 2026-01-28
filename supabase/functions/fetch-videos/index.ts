@@ -50,9 +50,7 @@ function parseVideosFromHtml(html: string): VideoItem[] {
     
     // Extract href - look for the main video link (after the thumbnail div)
     // The video link format is like: https://fapnut.net/video-title-here/
-    const hrefMatch = article.match(
-  /<a\s+href="(https:\/\/fapnut\.net\/[^"]+\/)"/i
-);
+    const hrefMatch = article.match(/<a\s+href="(https:\/\/fapnut\.net\/[^"]+\/)"/i);
 
     if (!hrefMatch) continue;
     const href = hrefMatch[1];
